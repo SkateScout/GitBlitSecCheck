@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
@@ -33,7 +34,7 @@ import ro.fortsoft.pf4j.Extension;
 @Extension public class GitBlitSecCheckReceiveHook extends ReceiveHook {
 	private static final Logger LOG = Logger.getLogger(GitBlitSecCheckReceiveHook.class.getCanonicalName());
 
-	private static       Ruleset ruleset      = null;
+	public static       Ruleset ruleset      = null;
 	private static final Path    path         = Path.of("etc/gitleaks.toml");
 	private static final URI     defaultRules = URI.create("https://raw.githubusercontent.com/gitleaks/gitleaks/refs/heads/master/config/gitleaks.toml");
 
@@ -59,13 +60,20 @@ import ro.fortsoft.pf4j.Extension;
 
 	@Override public void onPostReceive(final GitblitReceivePack receivePack, final Collection<ReceiveCommand> commands) { }
 
+	private static final Pattern ignoreFiles = Pattern.compile("(?i)[.](?:eot|[ot]tf|woff2|bmp|gif|jpe?g|png|svg|bin|socket|vsidx|v2|suo|wsuo|dll|pdb|exe|gltf|tiff?)$");
+	private static final Pattern tikaFiles   = Pattern.compile("(?i)[.](?:docx?|xlsx?|pdf)$");
+
 	private String scan(final Repository repository, final String path, final ObjectId objectId) throws MissingObjectException, IOException {
 		if(ruleset == null) {
 			LOG.log(Level.SEVERE, "⚡ Missing ruleset for GitBlitSecCheckReceiveHook");
 			return null;
 		}
-		final var loader   = repository.open(objectId);
-		final var content  = new String(loader.getBytes());
+		if(ignoreFiles.matcher(path).find()) return null;
+		final var loader    = repository.open(objectId);
+		final var bytes = loader.getBytes();
+		final var useTika   = tikaFiles.matcher(path).find();
+		final var content  = useTika ? TikaScanner.parse(bytes) : new String(bytes);
+		if(content == null) return null;
 		final var found = ruleset.findMatch(content);
 		return (null == found ? null : "Found possible secret ["+found.getKey()+"] via rule ["+found.getValue().id()+"] in file ["+path+"]");
 	}

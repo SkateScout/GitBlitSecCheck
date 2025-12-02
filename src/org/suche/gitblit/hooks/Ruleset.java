@@ -70,7 +70,7 @@ public record Ruleset(Map<String, Rule> ruleMap, Pattern pattern, Map<Integer,Ru
 	public record Rule (
 			String            id               , // 3...100
 			String            description      ,
-			Pattern           regex            , // 5...    RE2-compatible regular expression for detecting the secret.
+			String            regex            , // 5...    RE2-compatible regular expression for detecting the secret.
 			Double            entropy          ,
 			Set<String>       keywords         , //                 List of substrings that must be present to detect a potential secret. Used for efficient substring matching before applying regex matching.
 			String            validationRegex  , // 5...    RE2-compatible regular expression for validating secrets match an expected context.
@@ -129,6 +129,8 @@ public record Ruleset(Map<String, Rule> ruleMap, Pattern pattern, Map<Integer,Ru
 			public static List<Allowlists> of(final List<Map<String,Object>> m) { return (m == null || m.isEmpty() ? null : m.stream().map(Allowlists::of).toList()); }
 		}
 
+		static final Function<String, Pattern> regexCompile = t-> { if(null==t) return null; try { return Rule.pattern(t); } catch(final Throwable x) { throw new IllegalStateException("invalid pattern ["+t+"] => "+x.getMessage()); } };
+
 		@SuppressWarnings({ "unchecked"}) public static Rule of(final Map<String,Object> m) {
 			final var id    = (String)m.remove("id"              );
 			// if("generic-api-key".equals(id)) return null;
@@ -141,11 +143,12 @@ public record Ruleset(Map<String, Rule> ruleMap, Pattern pattern, Map<Integer,Ru
 			default             -> { System.err.println("Unsupported entropy({"+rawEntropy.getClass().getCanonicalName()+"}"+rawEntropy+")"); yield null; }
 			};
 
-			final Function<String, Pattern> regex = t-> { if(null==t) return null; try { return Rule.pattern(t); } catch(final Throwable x) { throw new IllegalStateException("ID["+id+"] invalid pattern ["+t+"] => "+x.getMessage()); } };
 			try {
+				final var regex = (String)m.remove("regex");
+				regexCompile.apply(regex);	// Check if valid
 				final var rule = new Rule( id
 						,        (String)m.remove("description"     )
-						,        regex.apply((String)m.remove("regex"           ))
+						,        regex
 						,        entropy
 						,        (       m.remove("keywords"        ) instanceof final Collection c ? new TreeSet<>(c) : null)
 						,        (String)m.remove("validationRegex" )
@@ -153,7 +156,7 @@ public record Ruleset(Map<String, Rule> ruleMap, Pattern pattern, Map<Integer,Ru
 						,        (       m.remove("examples"        ) instanceof final Collection c ? new TreeSet<>(c) : null)
 						,        (       m.remove("negativeExamples") instanceof final Collection c ? new TreeSet<>(c) : null)
 						,        (       m.remove("negativeExamples") instanceof final Map c ? AssignmentContext.of(c) : null)
-						,        regex.apply((String)m.remove("path"           ))
+						,        regexCompile.apply((String)m.remove("path"           ))
 						,        Allowlists.of((List<Map<String,Object>>)m.remove("allowlists"))
 						,        (Long  )m.remove("secretGroup"    )
 						);
@@ -181,7 +184,7 @@ public record Ruleset(Map<String, Rule> ruleMap, Pattern pattern, Map<Integer,Ru
 		rules.stream().filter(r->null!=r.regex).forEach(r->{
 			final var k = KEY.apply(r.id);
 			groupNameToRule.put(k, r);
-			p.append(p.isEmpty()?"":"|").append("(?<"+k+">"+r.regex.pattern()+")");
+			p.append(p.isEmpty()?"":"|").append("(?<"+k+">"+r.regex+")");
 		});
 		final var pattern = Rule.pattern(p.toString());
 		final var namedGroups = pattern.namedGroups();

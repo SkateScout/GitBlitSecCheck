@@ -10,12 +10,9 @@
  	 <classpath path="../GIT/Gitblit/ext/org.eclipse.jgit-6.10.1.202505221210-r.jar" />
  	 <classpath path="../GIT/Gitblit/ext/pf4j-0.9.0.jar"                             />
  	 <classpath path="../LIBS/external.lib/toml4j-0.7.3.jar"                         />
+ 	 <classpath path="../LIBS/external.lib/tika-core-3.2.3.jar"                      />
     </javac>
  	<copydir src="src/META-INF" dest="jar/classes/META-INF" />
- 	<!--
- 	<copy file="src/META-INF/MANIFEST.MF"    tofile="jar/classes/META-INF/MANIFEST.MF"    />
- 	<copy file="src/META-INF/extensions.idx" tofile="jar/classes/META-INF/extensions.idx" />
- 	-->
     <jar destfile="${jarFile}" basedir="jar" update="false" index="true" compress="true"  />
  </target>
 </project>
