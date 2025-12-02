@@ -1,0 +1,21 @@
+<project default="CreateJar">
+ <taskdef resource="org/suche/ant/antlib.xml"><classpath location="/ANT-Tools/ANT-Tools.jar"/></taskdef>
+ <property name="jarFile" value="GitBlitSecCheck.zip"/>
+	
+ <target name="CreateJar" description="Create Jar file">
+ 	<delete    dir="jar"/>
+ 	<mkdir     dir="jar/classes"/>	
+ 	<javac destdir="jar/classes" debug="true" target="25" includeantruntime="false" bootclasspath="${jre}" srcdir="src">
+ 	 <classpath path="../GIT/Gitblit/ext/gitblit-1.10.0.jar"                         />
+ 	 <classpath path="../GIT/Gitblit/ext/org.eclipse.jgit-6.10.1.202505221210-r.jar" />
+ 	 <classpath path="../GIT/Gitblit/ext/pf4j-0.9.0.jar"                             />
+ 	 <classpath path="../LIBS/external.lib/toml4j-0.7.3.jar"                         />
+    </javac>
+ 	<copydir src="src/META-INF" dest="jar/classes/META-INF" />
+ 	<!--
+ 	<copy file="src/META-INF/MANIFEST.MF"    tofile="jar/classes/META-INF/MANIFEST.MF"    />
+ 	<copy file="src/META-INF/extensions.idx" tofile="jar/classes/META-INF/extensions.idx" />
+ 	-->
+    <jar destfile="${jarFile}" basedir="jar" update="false" index="true" compress="true"  />
+ </target>
+</project>

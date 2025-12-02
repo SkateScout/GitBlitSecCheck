@@ -1,0 +1,6 @@
+Plugin-Id: GitBlitSecCheck
+Plugin-Description: Sec Check via ReceiveHook
+Plugin-Class: org.suche.gitblit.hooks.GitBlitSecCheckPlugin
+Plugin-Version: 1.2.0
+Plugin-Requires: 1.5.0
+Plugin-Provider: gitblit.com
