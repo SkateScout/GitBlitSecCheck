@@ -195,6 +195,7 @@ public record Ruleset(Map<String, Rule> ruleMap, Pattern pattern, Map<Integer,Ru
 
 	public Map.Entry<String,Rule> findMatch(final String t) {
 		final var m = pattern.matcher(t);
+		var skipedEntropy = false;
 		if (m.find()) {
 			final var gc = m.groupCount();
 			for(var i = 1; i < gc; i++) {
@@ -208,13 +209,14 @@ public record Ruleset(Map<String, Rule> ruleMap, Pattern pattern, Map<Integer,Ru
 					if(null != rule.entropy) {
 						final var entropy = shannonEntropy(secret);
 						if(entropy >= rule.entropy) return Map.entry(secret, rule);
-						System.out.println("Ignore weak["+rule.id+"]["+secret+"]");
+						LOG.log(Level.INFO, "Ignore ["+rule.id+"]["+secret+"] entropy "+entropy+" < "+rule.entropy);
+						skipedEntropy = true;
 						continue;
 					}
 					return Map.entry(secret, rule);
 				}
 			}
-			throw new IllegalStateException();
+			if(!skipedEntropy) LOG.log(Level.WARNING, "No rule for ["+m.group()+"] found");
 		}
 		return null;
 	}

@@ -1,6 +1,7 @@
 package org.suche.gitblit.hooks;
 import java.io.IOException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -53,7 +54,9 @@ import ro.fortsoft.pf4j.Extension;
 					final var toml = new Toml().read(new String(bytes)).toMap();
 					@SuppressWarnings("unchecked") final var r = Ruleset.ofListMap((List<Map<String,Object>>)toml.get("rules"));
 					ruleset = r;
-				} catch(final Throwable t) { LOG.log(Level.SEVERE, "Fetch GitBlitSecCheckReceiveHook rules => "+t.getMessage(), t); }
+				} catch(final UnknownHostException t) { LOG.log(Level.SEVERE, "Fetch GitBlitSecCheckReceiveHook rules from "+defaultRules+" failed. => "+t.getMessage());
+				} catch(final Throwable            t) { LOG.log(Level.SEVERE, "Fetch GitBlitSecCheckReceiveHook rules => "+t.getMessage(), t);
+				}
 			}, "Fetch security rules").start();
 		}
 	}
